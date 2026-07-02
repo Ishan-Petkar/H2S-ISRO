@@ -492,10 +492,10 @@ Total: $\bigO{N \log N}$.
 \textit{Logistic Confidence Combination.}
 The cascade probability score $\Pi_{\mathrm{cascade}}(p)$ is computed at Stage~5 using a logistic combination of the polarimetric features:
 \begin{equation}
-\Pi_{\mathrm{cascade}}(p) = \frac{1}{1 + \exp\!\bigl(-(\theta_0 + \theta_1 z_{\CPR}(p) + \theta_2 z_{\DOP}(p) + \theta_3 r(p))\bigr)},
+\Pi_{\mathrm{cascade}}(p) = \bigl(1 + \exp(-\eta(p))\bigr)^{-1},
 \label{eq:logistic}
 \end{equation}
-where $\theta_0 = -2.0$, $\theta_1 = 1.5$, $\theta_2 = -1.5$, and $\theta_3 = 1.0$ are default calibration coefficients chosen to map $z$-scores to $[0, 1]$ probability space.
+where $\eta(p) = \theta_0 + \theta_1 z_{\CPR}(p) + \theta_2 z_{\DOP}(p) + \theta_3 r(p)$, and $\theta_0 = -2.0$, $\theta_1 = 1.5$, $\theta_2 = -1.5$, and $\theta_3 = 1.0$ are default calibration coefficients chosen to map $z$-scores to $[0, 1]$ probability space.
 
 \textit{False-Positive Risk Score.}
 The risk score $\Phi(p) \in [0,1]$ encodes multiple independent risk factors to guide downstream rover traverse routing:
@@ -1443,7 +1443,7 @@ LOLA DEM archive.
 \bibliography{references}
 
 %% ==========================================================
-\appendix
+\appendices
 \section{Proofs and Derivations}
 \label{app:proofs}
 
@@ -1541,7 +1541,7 @@ By construction, no path in $\mathcal{S} \setminus \mathcal{S}_F$
 is ever returned.
 \end{proof}
 
-\subsection{Extended Ablation Tables}
+\section{Extended Ablation Tables}
 
 Extended ablation results (16 combinations of DBSCAN parameters) are
 provided in the supplementary material.
