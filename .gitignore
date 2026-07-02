@@ -1,0 +1,28 @@
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.toc
+*.pdf
+*.xdv
+*.synctex.gz
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.run.xml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+
+# Outputs/Scratch
+eh.txt
+graphify-out/
