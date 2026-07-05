@@ -15,22 +15,30 @@ from pipeline_skeleton import astar_traverse, compute_energy, PolarimetricScene
 SEED = 42
 rng = np.random.default_rng(SEED)
 
-def generate_synthetic_polar_dem(shape=(500, 500), pixel_size_m=5.0):
-    """Generates a synthetic high-fidelity DEM of a polar crater rim."""
-    logger.info(f"Generating synthetic DEM {shape} at {pixel_size_m} m/px...")
-    # Base terrain (Perlin-like noise via Gaussian filter)
-    noise = rng.normal(0, 100, shape)
-    dem = ndimage.gaussian_filter(noise, sigma=20)
+def load_real_lola_dem(shape=(200, 200), pixel_size_m=5.0):
+    """Loads a real LOLA GeoTIFF and crops a representative region."""
+    import tifffile
+    logger.info(f"Loading real LOLA DEM and Slope maps (cropping to {shape})...")
+    surf_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'Site04_surf.tif')
+    slp_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'Site04_slp.tif')
     
-    # Add a large crater depression on one side
-    y, x = np.ogrid[:shape[0], :shape[1]]
-    crater_center = (shape[0] // 2, shape[1] // 2 + 300)
-    dist = np.sqrt((y - crater_center[0])**2 + (x - crater_center[1])**2)
-    dem -= np.clip(200 - dist * 0.5, 0, None)
+    if not os.path.exists(surf_path) or not os.path.exists(slp_path):
+        raise FileNotFoundError(f"Missing LOLA files at {surf_path} or {slp_path}.")
+        
+    surf = tifffile.imread(surf_path)
+    slp = tifffile.imread(slp_path)
     
-    # Calculate slope (degrees)
-    dy, dx = np.gradient(dem, pixel_size_m, pixel_size_m)
-    slope_map = np.degrees(np.arctan(np.sqrt(dy**2 + dx**2)))
+    # Take a crop from the center
+    cy, cx = surf.shape[0] // 2, surf.shape[1] // 2
+    y0, y1 = cy - shape[0]//2, cy + shape[0]//2
+    x0, x1 = cx - shape[1]//2, cx + shape[1]//2
+    
+    dem = surf[y0:y1, x0:x1]
+    slope_map = slp[y0:y1, x0:x1]
+    
+    # Replace any NaNs if present
+    dem = np.nan_to_num(dem, nan=np.nanmedian(dem))
+    slope_map = np.nan_to_num(slope_map, nan=np.nanmedian(slope_map))
     
     return dem, slope_map
 
@@ -77,8 +85,8 @@ def main():
     
     # 2. Setup Terrain
     pixel_size_m = 5.0
-    shape = (100, 100) # 500m x 500m
-    dem, slope_map = generate_synthetic_polar_dem(shape=shape, pixel_size_m=pixel_size_m)
+    shape = (200, 200) # 1000m x 1000m
+    dem, slope_map = load_real_lola_dem(shape=shape, pixel_size_m=pixel_size_m)
     
     # Cost map (alpha, beta, gamma, delta weights from paper: 0.4, 0.3, 0.2, 0.1)
     # Since we are just testing the A* energy pruning, we'll use slope as the main cost driver
@@ -86,7 +94,7 @@ def main():
     
     # Start (lander) and Targets (ice patches)
     start_pos = (10, 10)
-    targets = np.array([[80, 80], [75, 85]]) # Deep in the PSR
+    targets = np.array([[180, 180], [175, 185]]) # Deep in the PSR
     
     # 3. Rover Specifications (VIPER-class)
     e_max_wh = 5000.0 # 5 kWh battery
