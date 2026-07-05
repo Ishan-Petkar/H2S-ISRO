@@ -494,11 +494,11 @@ where $\rho(p)/\rho_{\max}$ is the normalized DEM-scale roughness, $I_{\mathrm{b
 \textit{Empirical Reference Population Statistics.}
 To ground the Gaussian reference model in physical measurements, we extracted dry-regolith baseline statistics from public LRO Mini-RF S-band CPR polar mosaics. Over south-polar highland craters (excluding fresh craters with blocky ejecta), the sunlit, ice-free regolith background displays a circular polarization ratio of $\mu_R^{\CPR} = 0.35$ with standard deviation $\sigma_R^{\CPR} = 0.08$. The degree of polarization is characterized by $\mu_R^{\DOP} = 0.75$ with standard deviation $\sigma_R^{\DOP} = 0.08$. Within permanently shadowed regions (PSRs) that are free of anomalous volatile enhancements (e.g., portions of the Cabeus and Shackleton floor backgrounds), the values are similarly characterized by $\mu_R^{\CPR} = 0.32 \pm 0.10$ and $\mu_R^{\DOP} = 0.78 \pm 0.09$, establishing a consistent and stable polar reference baseline. Wavelength-scale roughness coupling yields a physical correlation coefficient of $r_{\mathcal{R}} \approx -0.15$ under dry conditions.
 
-\textit{Choice of $2\sigma$ threshold.}
-Under the Gaussian reference model, a $2\sigma$ threshold yields marginal tail probabilities of $P(z_{\CPR} \ge 2) \approx 0.0228$ and $P(z_{\DOP} \le -2) \approx 0.0228$. Although raw radar backscatter coefficients follow non-Gaussian statistics (such as Rayleigh or Gamma distributions), the log-transformed multilooked CPR and DOP values converge to a Gaussian distribution by the Central Limit Theorem after spatial filtering over the $7 \times 7$ Refined-Lee speckle filter window. Thus, under the independent reference model ($r_{\mathcal{R}} = 0$), the joint probability of a dry-regolith pixel falsely satisfying the AND condition at Stage~2 is approximately $0.0228^2 \approx 5.18 \times 10^{-4}$. Accounting for the empirical negative correlation ($r_{\mathcal{R}} = -0.15$), the joint tail probability in opposite quadrants is $1.10 \times 10^{-3}$ (formally derived in Lemma~\ref{lem:fp} and Appendix~\ref{app:proof:lemma1}). For a typical PSR scene size of $N \sim 7 \times 10^4$ pixels (matching Shackleton's floor), this corresponds to roughly 77 raw false-positive candidates, which is well within the capacity of Stages 3--5 to filter down to zero. The $2\sigma$ level is selected to balance this raw candidate generation against recall sensitivity. Ablation over thresholds from $1.5\sigma$ to $3.0\sigma$ is reported in Section~\ref{sec:experiments}.
+\textit{Choice of $2\sigma$ untuned prior.}
+Under the Gaussian reference model, a $2\sigma$ threshold yields marginal tail probabilities of $P(z_{\CPR} \ge 2) \approx 0.0228$ and $P(z_{\DOP} \le -2) \approx 0.0228$. Although raw radar backscatter coefficients follow non-Gaussian statistics (such as Rayleigh or Gamma distributions), the log-transformed multilooked CPR and DOP values converge to a Gaussian distribution by the Central Limit Theorem after spatial filtering over the $7 \times 7$ Refined-Lee speckle filter window. Thus, under the independent reference model ($r_{\mathcal{R}} = 0$), the joint probability of a dry-regolith pixel falsely satisfying the AND condition at Stage~2 is approximately $0.0228^2 \approx 5.18 \times 10^{-4}$. Accounting for the empirical negative correlation ($r_{\mathcal{R}} = -0.15$), the joint tail probability in opposite quadrants is $1.10 \times 10^{-3}$ (formally derived in Lemma~\ref{lem:fp} and Appendix~\ref{app:proof:lemma1}). For a typical PSR scene size of $N \sim 7 \times 10^4$ pixels (matching Shackleton's floor), this corresponds to roughly 77 raw false-positive candidates, which is well within the capacity of Stages 3--5 to filter down to zero. The $2\sigma$ level is selected as an untuned prior to balance this raw candidate generation against recall sensitivity. Ablation over thresholds from $1.5\sigma$ to $3.0\sigma$ is reported in Section~\ref{sec:experiments}.
 
 \textit{DBSCAN Parameters.}
-The parameters $\epsilon = 30$\,m (equivalent to two DFSAR pixel widths) and $\text{minPts} = 4$ (enforcing a minimum cluster area of approximately $900$\,m$^2$) are selected to suppress isolated single-pixel radar spikes (e.g., from small boulder fields) while preserving the spatial signature of continuous volatile deposits.
+The ablated parameters $\epsilon = 30$\,m (equivalent to two DFSAR pixel widths) and $\text{minPts} = 4$ (enforcing a minimum cluster area of approximately $900$\,m$^2$) are selected to suppress isolated single-pixel radar spikes (e.g., from small boulder fields) while preserving the spatial signature of continuous volatile deposits.
 
 \begin{figure}[htbp]
 \centering
@@ -797,7 +797,7 @@ Paths violating either the energy or time constraint are pruned before
 path quality is evaluated.
 Two to three ranked feasible corridors are produced.
 
-Default weights: $\alpha = 0.40$, $\beta = 0.30$, $\gamma = 0.20$,
+Default untuned prior weights: $\alpha = 0.40$, $\beta = 0.30$, $\gamma = 0.20$,
 $\delta = 0.10$.
 Here $\alpha$ dominates to ensure the planner favours high-probability
 ice targets; $\beta$ penalises steep terrain to protect the energy
@@ -1523,6 +1523,30 @@ $\epsilon$ (m) & minPts & Precision & Recall & F$_1$ Score \\
 60 & 2 & 0.954 & 0.417 & 0.580 \\
 60 & 4 & 0.954 & 0.417 & 0.580 \\
 60 & 8 & 0.954 & 0.417 & 0.580 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Parameter Justification}
+\label{app:parameters}
+
+Table~\ref{tab:param_justification} explicitly separates parameters that were ablated or fitted from those set as untuned theoretical priors.
+
+\begin{table}[htbp]
+\caption{Cascade and Planner Parameter Justification}
+\label{tab:param_justification}
+\centering
+\begin{tabular}{llcp{5cm}}
+\toprule
+Parameter & Symbol & Value & Justification (Type) \\
+\midrule
+CPR Anomaly Threshold & -- & $2\sigma$ & Balances theoretical $1.1 \times 10^{-3}$ FP tail with recall (Untuned Prior). \\
+DOP Anomaly Threshold & -- & $-2\sigma$ & Matches physical subsurface depolarisation (Untuned Prior). \\
+Roughness Veto Threshold & -- & $2.5\sigma$ & Peak F$_1$ score on synthetic stress test (Ablated). \\
+DBSCAN Radius & $\epsilon$ & $30$\,m & Optimal density clustering radius from Table~\ref{tab:dbscan_ablation} (Ablated). \\
+DBSCAN Core Points & minPts & $4$ & Suppresses single-pixel noise spikes (Ablated). \\
+Cost Map Weights & $\alpha,\beta,\gamma,\delta$ & $0.4, 0.3, 0.2, 0.1$ & Heuristic baseline favouring targets over hazards (Untuned Prior). \\
+Contingency Margin & -- & $20\%$ & Standard NASA robotic margin (Untuned Prior). \\
 \bottomrule
 \end{tabular}
 \end{table}
