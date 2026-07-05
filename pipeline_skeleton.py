@@ -91,6 +91,7 @@ def build_reference_population(scene: PolarimetricScene,
 def run_detector(scene: PolarimetricScene,
                  ref: dict,
                  sigma_thresh: float = 2.0,
+                 roughness_sigma: float = 2.5,
                  dbscan_eps: float = 30.0,
                  dbscan_minpts: int = 4,
                  min_cluster_area_m2: float = 100.0) -> DetectionOutput:
@@ -105,7 +106,7 @@ def run_detector(scene: PolarimetricScene,
     stage2 = scene.psr_mask & (z_cpr >= sigma_thresh) & (z_dop <= -sigma_thresh)
 
     # --- Stage 3: Roughness veto ---
-    rough_thresh = ref["mu_rough"] + sigma_thresh * ref["std_rough"]
+    rough_thresh = ref["mu_rough"] + roughness_sigma * ref["std_rough"]
     roughness_anomaly = scene.roughness > rough_thresh
     # Log roughness-scale mismatch risk
     fp_risk[stage2 & roughness_anomaly] += 0.4   # scale-mismatch penalty
@@ -239,7 +240,9 @@ def astar_traverse(cost_map: np.ndarray,
                    t_relay_hours: float,
                    pixel_size_m: float,
                    slope_map: np.ndarray,
-                   contingency: float = 0.20) -> TraverseOutput:
+                   contingency: float = 0.20,
+                   e0: float = 2.0,
+                   k_traction: float = 0.05) -> TraverseOutput:
     """
     A* path planner with hard energy + relay constraints.
     Returns only feasible paths; empty list if none exist.
@@ -277,7 +280,7 @@ def astar_traverse(cost_map: np.ndarray,
                 # Basic locomotion cost
                 dist = np.sqrt(dr**2 + dc**2) * pixel_size_m
                 slope_deg = slope_map[nr, nc]
-                e_step = 2.0 * (1 + 0.05 * np.tan(np.radians(slope_deg))) * dist
+                e_step = e0 * (1 + k_traction * np.tan(np.radians(slope_deg))) * dist
 
                 new_e = e_curr + e_step
                 # Prune if energy exceeded
