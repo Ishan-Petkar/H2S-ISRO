@@ -931,87 +931,32 @@ where $f(x,y; r_{\mathcal{R}})$ is the standard bivariate normal PDF. Under the 
 Under the bivariate Gaussian assumption, the marginal tail probabilities are $P(z_{\CPR} \ge 2) = 1 - \Phi_{\mathcal{N}}(2) \approx 0.0228$ and $P(z_{\DOP} \le -2) = \Phi_{\mathcal{N}}(-2) \approx 0.0228$. Under independence ($r_{\mathcal{R}} = 0$), the joint probability is the product of these marginals: $P_{\mathrm{FP},\mathrm{indep}}^{(2)} \approx 0.0228^2 \approx 5.18 \times 10^{-4}$. When a physical negative correlation $r_{\mathcal{R}} = -0.15$ is introduced, the joint tail probability in opposite quadrants increases to $1.10 \times 10^{-3}$, representing the physical limit of raw anomaly generation before spatial and roughness vetoes are applied.
 \end{proof}
 
-\begin{corollary}
-Stages 3--5 monotonically reduce the overall false-positive rate below
-$P_{\mathrm{FP}}^{(2)}$.
-The cascade architecture guarantees that adding stages never increases
-the false-positive rate.
-\end{corollary}
+Because the detection pipeline is a strict logical AND cascade, Stages 3--5 act as monotonic filters, structurally guaranteeing that subsequent operations can only decrease the final false-positive rate below the initial $P_{\mathrm{FP}}^{(2)}$ bound.
 
 \subsection{Detection Sensitivity Lower Bound}
 
-\begin{theorem}[Minimum Detectable Ice Signal]
-\label{thm:sensitivity}
-Let a true ice-bearing pixel have CPR elevation
-$\Delta_{\CPR} = \CPR_{\mathrm{ice}} - \mu_R^{\CPR}$
-and DOP depression
-$\Delta_{\DOP} = \mu_R^{\DOP} - \DOP_{\mathrm{ice}}$.
-The pixel survives Stage~2 if and only if:
-\begin{equation}
-\Delta_{\CPR} \ge 2\sigma_R^{\CPR}
-\quad\text{and}\quad
-\Delta_{\DOP} \ge 2\sigma_R^{\DOP}.
-\label{eq:sensitivity}
-\end{equation}
-Combining with the skin-depth model (Section~\ref{sec:method:depth}),
-the minimum detectable ice volume fraction at depth $d \le 2$\,m is:
+\subsection{Detection Sensitivity Lower Bound}
+
+\textbf{Design Property 1: Minimum Detectable Ice Signal.}
+Let a true ice-bearing pixel have CPR elevation $\Delta_{\CPR} = \CPR_{\mathrm{ice}} - \mu_R^{\CPR}$ and DOP depression $\Delta_{\DOP} = \mu_R^{\DOP} - \DOP_{\mathrm{ice}}$. The pixel survives Stage~2 if and only if $\Delta_{\CPR} \ge 2\sigma_R^{\CPR}$ and $\Delta_{\DOP} \ge 2\sigma_R^{\DOP}$. Because the CPR-to-ice-fraction mapping (Eq.~\ref{eq:icefrac}) is monotonically increasing, evaluating it at the boundary condition yields the minimum detectable ice volume fraction at depth $d \le 2$\,m:
 \begin{equation}
 \Fice^{\min} = a \cdot \ln\!\bigl(\mu_R^{\CPR} + 2\sigma_R^{\CPR}\bigr) + b,
 \label{eq:ficemin}
 \end{equation}
 where $a, b$ are the empirical coefficients from Eq.~(\ref{eq:icefrac}).
-\end{theorem}
 
-\begin{proof}[Proof sketch]
-Equation~(\ref{eq:sensitivity}) follows directly from the Stage-2
-threshold definition.
-The CPR-to-ice-fraction mapping (Eq.~\ref{eq:icefrac}) is
-monotonically increasing in CPR for $a > 0$. Evaluating this function at
-the minimum CPR that passes the Stage~2 threshold ($\CPR = \mu_R^{\CPR} + 2\sigma_R^{\CPR}$)
-yields Eq.~(\ref{eq:ficemin}) directly.
-Full derivation is in Appendix~\ref{app:proofs}.
-\end{proof}
-
-\begin{corollary}[Sensitivity-Specificity Tradeoff]
-Increasing the Stage-2 threshold from $2\sigma$ to $k\sigma$
-raises the minimum detectable ice fraction (reduces sensitivity)
-while reducing the Stage-2 false-positive rate from
-$5.3 \times 10^{-4}$ to $P(z \ge k)^2$.
-The tradeoff is parameterised entirely by $k$ and is monotone:
-no threshold achieves simultaneously higher sensitivity and
-higher specificity than another.
-\end{corollary}
+\textbf{Design Property 2: Sensitivity-Specificity Tradeoff.}
+Increasing the Stage-2 threshold from $2\sigma$ to $k\sigma$ raises the minimum detectable ice fraction (reduces sensitivity) while reducing the Stage-2 false-positive rate from $1.1 \times 10^{-3}$ to a function parameterized by $k$. The tradeoff is strictly monotonic: no threshold achieves simultaneously higher sensitivity and higher specificity than another.
 
 \subsection{Traverse Feasibility Guarantee}
 
-\begin{theorem}[Traverse Feasibility]
-\label{thm:feasibility}
-If no candidate path from $p^*$ to the nearest ice-candidate cluster
-$\mathcal{I}^*$ satisfies both Eq.~(\ref{eq:energy}) and
-Eq.~(\ref{eq:timebudget}), the planner returns an empty set and
-a diagnostic report rather than a constraint-violating path.
-\end{theorem}
-
-\begin{proof}[Proof sketch]
-The A* cost function in Eq.~(\ref{eq:cost}) is evaluated only over
-the set of constraint-feasible paths.
-If this set is empty, no path is selected.
-Infeasibility is therefore guaranteed to be reported rather than silently
-ignored.
-Full proof by induction on the A* open-set size is given in
-Appendix~\ref{app:proofs}.
-\end{proof}
+\textbf{Design Property 3: Traverse Feasibility Guarantee.}
+By evaluating the cost function (Eq.~\ref{eq:cost}) exclusively over the set of dynamically feasible nodes, the A* planner structurally guarantees that if no path from $p^*$ to $\mathcal{I}^*$ satisfies the energy and relay time constraints (Eqs.~\ref{eq:energy},~\ref{eq:timebudget}), it terminates and flags the region as inaccessible rather than returning a constraint-violating path.
 
 \subsection{Convergence of Monte Carlo Volume Estimate}
 
-\begin{proposition}[MC Convergence]
-\label{prop:mc}
-For $n$ Monte Carlo samples, the estimator $\hat{V}_{\mathrm{ice}}^{(n)}$
-converges to the true expected volume in $\bigO{1/\sqrt{n}}$ by the
-Central Limit Theorem.
-For $n = 10\,000$, the Monte Carlo standard error is less than 1\% of
-the sample standard deviation.
-\end{proposition}
+\textbf{Design Property 4: Monte Carlo Convergence.}
+For $n$ Monte Carlo samples, the volume estimator $\hat{V}_{\mathrm{ice}}^{(n)}$ converges to the true expected volume in $\bigO{1/\sqrt{n}}$ in accordance with standard Monte Carlo integration. We enforce $n = 10\,000$ to ensure the standard error remains strictly bounded below 1\% of the sample standard deviation.
 
 %% ==========================================================
 \section{Planned Evaluation Framework}
@@ -1435,70 +1380,7 @@ In real dry-regolith regions, surface and subsurface roughness typically introdu
 where $f(x, y; r_{\mathcal{R}})$ is the standard bivariate normal PDF and $\phi_{\mathcal{N}}$ is the standard univariate normal PDF. For an empirical correlation coefficient $r_{\mathcal{R}} = -0.15$ (derived from public LRO Mini-RF S-band polar observations), the actual false-positive rate is $1.10 \times 10^{-3}$, which is slightly higher than the independent case of $5.18 \times 10^{-4}$. This negative correlation increases the rate of raw anomalous pixels, making the subsequent spatial coherence and roughness vetoes (Stages 3--5) of the cascade critical to suppress these correlated anomalies and guarantee a final false-positive rate well below $0.1\%$.
 \end{proof}
 
-\subsection{Derivation of Theorem~\ref{thm:sensitivity} (Sensitivity Lower Bound)}
-\label{app:proof:theorem2}
-\begin{proof}
-The empirical CPR-to-ice-fraction relationship in Eq.~(\ref{eq:icefrac}) is:
-\begin{equation*}
-\Fice = a \cdot \ln\!\bigl(\CPR\bigr) + b \quad \text{for } \CPR > e^{-b/a}.
-\end{equation*}
-Since the logarithmic function is monotonically increasing for $a > 0$, the minimum value of $\Fice$ that can be detected by the pipeline is uniquely determined by the minimum CPR value that passes the Stage 2 threshold.
-
-A pixel survives Stage 2 if and only if:
-\begin{equation*}
-z_{\CPR} = \frac{\CPR - \mu_R^{\CPR}}{\sigma_R^{\CPR}} \ge 2 \implies \CPR \ge \mu_R^{\CPR} + 2\sigma_R^{\CPR}.
-\end{equation*}
-Evaluating the monotonic ice fraction function at the detection boundary value $\CPR^{\min} = \mu_R^{\CPR} + 2\sigma_R^{\CPR}$ yields the minimum detectable volumetric ice fraction at the sensing depth limit ($d \le 2$\,m):
-\begin{equation*}
-\Fice^{\min} = a \cdot \ln\!\bigl(\mu_R^{\CPR} + 2\sigma_R^{\CPR}\bigr) + b,
-\end{equation*}
-which matches Eq.~(\ref{eq:ficemin}) directly.
-\end{proof}
-
-\subsection{Derivation of Proposition~\ref{prop:mc} (Monte Carlo Convergence)}
-\label{app:proof:prop1}
-\begin{proof}
-Let $V_1, V_2, \ldots, V_n$ be independent and identically distributed random samples of estimated ice volume drawn from the joint probability distributions of the variables in the ice volume integral:
-\begin{equation*}
-V_i = A_i \cdot \Fice(i) \cdot 2\,\text{m},
-\end{equation*}
-with finite expected mean $\mu_V$ and variance $\sigma_V^2$.
-The Monte Carlo estimator of the total volume is the sample mean:
-\begin{equation*}
-\hat{V}_{\mathrm{ice}}^{(n)} = \frac{1}{n} \sum_{i=1}^n V_i.
-\end{equation*}
-By the Central Limit Theorem, as the sample size $n \to \infty$, the distribution of the sample mean converges in distribution to a normal distribution:
-\begin{equation*}
-\sqrt{n}\bigl(\hat{V}_{\mathrm{ice}}^{(n)} - \mu_V\bigr) \xrightarrow{d} \mathcal{N}\bigl(0, \sigma_V^2\bigr).
-\end{equation*}
-The standard error (SE) of this estimator is:
-\begin{equation*}
-\text{SE}\bigl(\hat{V}_{\mathrm{ice}}^{(n)}\bigr) = \frac{\sigma_V}{\sqrt{n}}.
-\end{equation*}
-For $n = 10\,000$, we obtain:
-\begin{equation*}
-\text{SE}\bigl(\hat{V}_{\mathrm{ice}}^{(10\,000)}\bigr) = \frac{\sigma_V}{\sqrt{10\,000}} = 0.01 \sigma_V,
-\end{equation*}
-which is exactly 1\% of the sample standard deviation $\sigma_V$, verifying the convergence rate.
-\end{proof}
-
-\subsection{Proof of Theorem~\ref{thm:feasibility} (Traverse Feasibility)}
-\label{app:proof:theorem3}
-\begin{proof}
-Let $\mathcal{S}$ denote the set of paths from $p^*$ to
-$\mathcal{I}^*$ in the grid graph.
-Define the feasible subset
-$\mathcal{S}_F = \{ \pi \in \mathcal{S} :
-  E(\pi) \le 0.80\,E_{\max}
-  \text{ and }
-  t(\pi) \le T_{\mathrm{relay}} \}$.
-The A* planner evaluates only elements of $\mathcal{S}_F$.
-If $\mathcal{S}_F = \emptyset$, A* terminates with an empty open set
-and returns $\emptyset$ along with the binding constraint
-(energy or time).
-By construction, no path in $\mathcal{S} \setminus \mathcal{S}_F$
-is ever returned.
-\end{proof}
+% Unnecessary derivations for basic design properties have been removed to avoid formalism inflation.
 
 \section{Extended Ablation Tables}
 
