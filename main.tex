@@ -138,10 +138,7 @@ residual risk.
 \subsection*{Main Contributions}
 
 \begin{itemize}
-  \item \textbf{Five-stage AND-cascade anomaly detector}: terrain-matched
-    statistical scoring replaces global thresholds;
-    each stage eliminates a distinct false-positive class
-    (\S\ref{sec:method:icedetect}).
+  \item \textbf{Stackable-veto cascade architecture}: terrain-matched statistical scoring replaces global thresholds. Instead of merely identifying radar anomalies, this architecture explicitly filters out roughness-induced false positives that have confounded prior L-band analyses (\S\ref{sec:method:icedetect}).
   \item \textbf{Physically-derived penetration depth}: skin-depth theory
     yields a 4.3\,m maximum theoretical L-band penetration depth; a conservative 2\,m high-confidence sensing column is
     adopted with explicit uncertainty on deeper layers
@@ -149,10 +146,8 @@ residual risk.
   \item \textbf{Illumination-constrained landing-site optimisation}: the
     rover's surface entry distance is an output of a horizon ray-trace,
     not an assumed constant (\S\ref{sec:method:landing}).
-  \item \textbf{Joint energy-and-relay-window traverse planning}: the
-    A*-based path planner is subject to hard battery and
-    communication constraints solved simultaneously
-    (\S\ref{sec:method:traverse}).
+  \item \textbf{Joint energy and visibility traverse planning}: the
+    A*-based path planner is simultaneously subject to hard battery depletion and communication relay constraints from polar-orbiting assets (\S\ref{sec:method:traverse}).
   \item \textbf{Mandatory Known Unknowns deliverable}: six residual
     uncertainties are quantified and disclosed as a first-class
     output product (\S\ref{sec:unknowns}).
@@ -186,14 +181,7 @@ Our anomaly framework directly operationalises this critique by
 constructing terrain-matched reference populations and applying a
 scale-aware roughness veto.
 
-Chandrayaan-2 DFSAR offers dual-frequency (L+S) fully polarimetric
-capability unavailable to Mini-RF.
-Kumar et al.~\cite{kumar2022dfsar} demonstrated elevated CPR and
-decreased degree of polarisation (DOP) in several south polar craters
-and interpreted the pattern as consistent with subsurface ice.
-The present work builds on this basis while hardening the detection
-logic against the false-positive failure modes their study acknowledged
-but did not resolve.
+Chandrayaan-2 DFSAR offers dual-frequency (L+S) fully polarimetric capability unavailable to Mini-RF. Foundational studies by Kumar et al.~\cite{kumar2022dfsar} established the utility of L-band elevated CPR and decreased degree of polarisation (DOP) as indicators for subsurface ice in south polar craters. Recent analyses have further leveraged these DFSAR capabilities, with Sahu et al.~\cite{sahu2024integrated} integrating Mini-SAR and DFSAR data to map north polar deposits in Erlanger Crater, and Verma et al.~\cite{verma2025dfsar} conducting comprehensive multi-crater surveys at the lunar south pole. The present work builds entirely upon these physical interpretations. Our primary novelty is not the discovery of the dual-frequency signature itself, but rather the introduction of an automated, stackable-veto cascade architecture that explicitly hardens the detection logic against the roughness-induced false-positive failure modes acknowledged by these prior studies.
 
 \subsection{Penetration Depth and Dielectric Retrieval}
 
@@ -224,7 +212,7 @@ hard requirements in a jointly solved A* planner.
 \centering
 \small
 \setlength{\tabcolsep}{3pt}
-\begin{tabular}{p{1.8cm}cccc}
+\begin{tabular}{p{2.3cm}cccc}
 \toprule
 Method & Thresh. & FP Mitig. & Depth & Trav. \\
        & Type    & Explicit? & Model & Plan? \\
@@ -232,6 +220,8 @@ Method & Thresh. & FP Mitig. & Depth & Trav. \\
 Spudis et al.~\cite{spudis2013mini}
   & Global CPR & No & None & No \\
 Kumar et al.~\cite{kumar2022dfsar}
+  & CPR+DOP & Partial & None & No \\
+Verma et al.~\cite{verma2025dfsar}
   & CPR+DOP & Partial & None & No \\
 Proposed
   & Terrain-m. & Yes ($\Phi$) & Phys. & Yes \\
