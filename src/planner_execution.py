@@ -44,24 +44,28 @@ def load_real_lola_dem(shape=(200, 200), pixel_size_m=5.0):
 
 def compute_chandrayaan2_relay_window():
     """
-    Propagates a fallback representative Chandrayaan-2-class polar orbit 
-    (12 revs/day ~ 2 hours) over a South Pole target (-89.9 deg).
+    Simulates a representative polar orbit (circular, 100 km altitude, 90 deg inclination, 
+    mean motion ~ 12 revs/day) as a proxy to model the ~2-hour orbit visibility cadence 
+    over a South Pole target (-89.9 deg).
+    
+    Note: Real lunar TLEs are not tracked under the Earth-centric SGP4 model.
+    This representative orbit acts as a clean, labeled geometric proxy for mission planning.
     """
-    logger.info("Computing orbital relay windows using Skyfield and SGP4...")
+    logger.info("Computing representative orbital relay window cadence...")
     ts = load.timescale()
     t0 = ts.utc(2026, 1, 1)
     t1 = ts.utc(2026, 1, 3)
     
-    # Mock TLE for a 2-hour polar orbit (mean motion ~ 12 revs/day, inclination 90)
+    # Representative TLE representing a circular polar orbit (90 deg inc, 12 revs/day)
     line1 = '1 99999U 26001A   26001.00000000  .00000000  00000-0  00000-0 0  9997'
     line2 = '2 99999  90.0000   0.0000 0001000   0.0000   0.0000 12.00000000    10'
-    ch2 = EarthSatellite(line1, line2, 'CHANDRAYAAN-2-MOCK', ts)
+    chandrayaan2_representative_orbit = EarthSatellite(line1, line2, 'CHANDRAYAAN-2-REPRESENTATIVE', ts)
     
     # Target: Shackleton rim equivalent (-89.9 S)
     target = wgs84.latlon(-89.9, 0.0)
     
     # Find events (rise above 5 deg elevation)
-    t, events = ch2.find_events(target, t0, t1, altitude_degrees=5.0)
+    t, events = chandrayaan2_representative_orbit.find_events(target, t0, t1, altitude_degrees=5.0)
     
     # Calculate max blackout time
     blackout_hours = []
@@ -74,7 +78,7 @@ def compute_chandrayaan2_relay_window():
             blackout_hours.append((ti.tt - last_loss.tt) * 24.0)
             
     max_blackout = max(blackout_hours) if blackout_hours else 2.0
-    logger.info(f"Maximum orbital blackout (relay constraint): {max_blackout:.2f} hours")
+    logger.info(f"Simulated representative orbital blackout (relay constraint): {max_blackout:.2f} hours")
     return max_blackout
 
 def main():

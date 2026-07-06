@@ -1,0 +1,5 @@
+scene_name,method,precision,recall,f1
+Sverdrup,global_threshold_baseline,0.0,0.0,0.0
+Sverdrup,proposed_cascade,1.0,0.07610400121402196,0.14144358004089594
+Faustini,global_threshold_baseline,0.0,0.0,0.0
+Faustini,proposed_cascade,0.9551422319474836,0.20738805083739162,0.3407826680979799

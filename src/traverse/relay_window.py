@@ -30,14 +30,15 @@ def compute_relay_windows(crater_lat_deg: float,
     duration_hours   : total window to search
     min_elevation_deg: minimum orbiter elevation for link closure
     """
+    # Note: Real lunar orbiters like Chandrayaan-2 cannot be physically propagated 
+    # using standard Earth-centric TLEs and SGP4. Doing so with Earth-frame 
+    # tools (like wgs84) is physically incorrect. This function uses the TLE 
+    # structure strictly as a geometric circular-orbit visibility proxy to 
+    # simulate a representative polar-orbit visibility cadence. Real mission 
+    # operations would require SPICE/NAIF kernels.
     ts = load.timescale()
     satellite = EarthSatellite(TLE_LINE1, TLE_LINE2,
-                                'Chandrayaan-2', ts)
-
-    # Note: skyfield uses Earth-based coordinates.
-    # For lunar surface targets, this is an approximation — the
-    # actual relay geometry requires a lunar ephemeris.
-    # This is documented as a labeled assumption in the paper.
+                                'Chandrayaan-2-Representative-Proxy', ts)
     crater = wgs84.latlon(crater_lat_deg, crater_lon_deg)
 
     t0 = ts.utc(*[int(x) for x in

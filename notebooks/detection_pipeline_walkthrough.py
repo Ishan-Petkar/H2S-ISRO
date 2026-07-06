@@ -22,11 +22,15 @@ Sections:
 
 # %%
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from sklearn.cluster import DBSCAN
-import sys; sys.path.insert(0, '..')
-from src.pipeline_skeleton import (
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from pipeline_skeleton import (
     PolarimetricScene, build_reference_population,
     run_detector, find_landing_site, estimate_ice_volume
 )
