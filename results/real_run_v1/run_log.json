@@ -1,0 +1,18 @@
+{
+  "ice_candidates_count": 401,
+  "volume_estimate": {
+    "headline_m3": 776.688260780617,
+    "ci_90_lo": 701.8526245439234,
+    "ci_90_hi": 832.8380488496315,
+    "uncertainty_pct": 8.43230359720257
+  },
+  "reference_stats": {
+    "mu_cpr": 0.4,
+    "std_cpr": 0.1,
+    "mu_dop": 0.7,
+    "std_dop": 0.1,
+    "mu_rough": 1173.0391845703125,
+    "std_rough": 31.817602157592773,
+    "type": "sunlit_fallback"
+  }
+}
