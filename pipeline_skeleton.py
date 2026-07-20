@@ -108,8 +108,7 @@ def run_detector(scene: PolarimetricScene,
     # --- Stage 3: Roughness veto ---
     rough_thresh = ref["mu_rough"] + roughness_sigma * ref["std_rough"]
     roughness_anomaly = scene.roughness > rough_thresh
-    # Log roughness-scale mismatch risk
-    fp_risk[stage2 & roughness_anomaly] += 0.4   # scale-mismatch penalty
+    # Log roughness-scale mismatch risk (removed additive penalty to follow Eq. 4 later)
     stage3 = stage2 & ~roughness_anomaly
 
     # --- Stage 4: Spatial coherence (DBSCAN) ---
@@ -136,10 +135,9 @@ def run_detector(scene: PolarimetricScene,
     stage5_mask = stage4_mask.copy()
     ratio = np.where(scene.cpr_L > 0, scene.cpr_S / scene.cpr_L, 0)
     weak_corr = stage4_mask & (ratio <= 1.0)
-    fp_risk[weak_corr] += 0.3    # corroboration absent
     # (still retained; just lower confidence)
 
-    # --- Ice probability (logistic combination) ---
+    # --- Ice probability (linear confidence combination, Eq. 3) ---
     confidence = (
         np.clip(z_cpr, 0, 5) / 5.0 * 0.4 +
         np.clip(-z_dop, 0, 5) / 5.0 * 0.4 +
@@ -147,10 +145,20 @@ def run_detector(scene: PolarimetricScene,
     )
     ice_prob[stage5_mask] = np.clip(confidence[stage5_mask], 0, 1)
 
-    # Baseline-bias risk from reference type
+    # --- Phi Risk Score (Eq. 4) ---
+    rho_max = max(1e-6, scene.roughness.max())
+    I_bias = np.full((H, W), 0.0)
     if ref["type"] == "sunlit_fallback":
-        fp_risk += 0.15
+        I_bias[:] = 1.0
+    elif ref["type"] == "slope_matched":
+        I_bias[:] = 0.5
 
+    ratio_safe = np.where(scene.cpr_L > 0, scene.cpr_S / scene.cpr_L, 0)
+    fp_risk = (
+        0.40 * (scene.roughness / rho_max) +
+        0.30 * I_bias +
+        0.30 * np.clip(1.0 - ratio_safe, 0, 1)
+    )
     fp_risk = np.clip(fp_risk, 0, 1)
 
     return DetectionOutput(ice_prob, fp_risk, stage5_mask)
@@ -325,10 +333,10 @@ def estimate_ice_volume(cpr_L_anomaly: np.ndarray,
     # Monte Carlo: perturb CPR by measurement noise, area by delineation error
     volumes = []
     for _ in range(n_mc):
-        cpr_noisy = cpr_vals * rng.normal(1.0, 0.08, size=cpr_vals.shape)
+        cpr_noisy = cpr_vals * rng.normal(1.0, 0.05, size=cpr_vals.shape)
         f_noisy   = a * np.log(np.clip(cpr_noisy, 0.01, None)) + b
         f_noisy   = np.clip(f_noisy, 0, 1)
-        area_frac = rng.normal(1.0, 0.05)   # 5% area delineation noise
+        area_frac = rng.normal(1.0, 0.08)   # 8% area delineation noise
         n_pix_noisy = len(cpr_vals) * area_frac
         v = n_pix_noisy * pixel_area_m2 * f_noisy.mean() * depth_m
         volumes.append(v)

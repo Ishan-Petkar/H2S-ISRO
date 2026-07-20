@@ -149,7 +149,7 @@ def main():
                 scene, ref,
                 sigma_thresh=1.5,
                 roughness_sigma=2.5,
-                dbscan_eps=60.0,  # Expand DBSCAN epsilon to handle noisy clusters
+                dbscan_eps=60.0,
                 dbscan_minpts=4,
                 min_cluster_area_m2=100.0
             )

@@ -194,7 +194,7 @@ def run_roughness_ablation(scene, gt_mask):
                 if lbl == -1:
                     continue
                 cluster = coords[labels == lbl]
-                if len(cluster) * scene.pixel_area_m2 >= 1000.0:
+                if len(cluster) * scene.pixel_area_m2 >= 100.0:
                     stage4_mask[cluster[:, 0], cluster[:, 1]] = True
         
         stage5_mask = stage4_mask.copy()
@@ -241,7 +241,7 @@ def run_stage_waterfall(scene):
             if lbl == -1:
                 continue
             cluster = coords[labels == lbl]
-            if len(cluster) * scene.pixel_area_m2 >= 1000.0:
+            if len(cluster) * scene.pixel_area_m2 >= 100.0:
                 stage4_mask[cluster[:, 0], cluster[:, 1]] = True
     counts.append(stage4_mask.sum())
     
@@ -290,7 +290,7 @@ def run_dbscan_ablation(scene, gt_mask):
                     if lbl == -1:
                         continue
                     cluster = coords[labels == lbl]
-                    if len(cluster) * scene.pixel_area_m2 >= 1000.0:
+                    if len(cluster) * scene.pixel_area_m2 >= 100.0:
                         stage4_mask[cluster[:, 0], cluster[:, 1]] = True
                         
             y_true = eval_gt.flatten()

@@ -132,7 +132,10 @@ def main():
     
     if output.feasible:
         path, e_consumed, _ = output.paths[0]
-        length_m = len(path) * pixel_size_m
+        length_m = sum(
+            np.sqrt((path[i+1][0]-path[i][0])**2 + (path[i+1][1]-path[i][1])**2) * pixel_size_m
+            for i in range(len(path)-1)
+        )
         logger.info(f"--- SUCCESS ---")
         logger.info(f"Optimal Path Length: {length_m:.1f} meters")
         logger.info(f"Energy Consumed: {e_consumed:.1f} Wh ({(e_consumed/e_max_wh)*100:.1f}% of E_max)")
