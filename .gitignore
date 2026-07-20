@@ -26,3 +26,4 @@ __pycache__/
 # Outputs/Scratch
 eh.txt
 graphify-out/
+data/dfsar/
