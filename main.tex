@@ -1447,6 +1447,15 @@ Contingency Margin & -- & $20\%$ & Standard NASA robotic margin (Untuned Prior).
 \end{table}
 
 %% ==========================================================
+\section*{Data Provenance and Code Availability}
+
+To ensure full reproducibility of the real-world validation, the source code and documentation are provided at \texttt{github.com/Ishan-Petkar/H2S-ISRO}. This repository includes:
+\begin{itemize}
+    \item \textbf{PRADAN Ingestion Script:} A programmatic tool (\texttt{src/pradan\_ingestion.py}) to extract Level-2 Hybrid-Polarimetric Stokes parameters ($S_1, S_2, S_3, S_4$) from the ISRO PRADAN portal and calculate CPR and DOP.
+    \item \textbf{GIS Registration Guide:} A manual registration guide (\texttt{docs/pradan\_registration\_guide.md}) instructing users on perfectly aligning DFSAR total-power rasters with NASA LOLA DEM grids to enable the roughness veto.
+    \item \textbf{DEM Reproducibility Trail:} Exact SHA-256 checksums and provenance details for the NASA Planetary Geodynamics Data Archive (PGDA) LOLA $5$\,m/px DEMs over Shackleton Crater (Product 78) are documented, alongside lightweight cropped stand-ins (\texttt{Site04\_surf\_crop.tif} and \texttt{Site04\_slp\_crop.tif}) for immediate execution.
+\end{itemize}
+
 \section*{Reproducibility Checklist}
 
 \begin{itemize}
