@@ -63,7 +63,7 @@ Using Chandrayaan-2 DFSAR Data}
 
 %% ----------------------------------------------------------
 \begin{abstract}
-Detecting subsurface water ice within doubly shadowed craters (DSCs) at the lunar south pole is one of the most consequential open problems in planetary exploration. Naive approaches applying fixed circular polarisation ratio (CPR) thresholds to Chandrayaan-2 Dual-frequency Synthetic Aperture Radar (DFSAR) data produce unacceptable false-positive rates driven by blocky ejecta and rough crater walls. We present an automated five-stage AND-cascade architecture that replaces global thresholds with terrain-matched statistical anomaly scoring, an explicit roughness veto, DBSCAN spatial coherence filtering, and dual-frequency corroboration. On synthetic polar scenes the cascade achieves precision 0.96 / recall 0.45 ($F_1 = 0.570$); on real DFSAR proxy scenes the pipeline identifies 401 ice-candidate pixels in Shackleton Crater. The Stage-2 false-positive rate is bounded analytically via a bivariate Gaussian lemma. Penetration depth is derived from radar skin-depth theory at published lunar loss tangents, yielding a conservative 2 m high-confidence sensing column. Landing-site selection is formulated as a constrained optimisation over a horizon-based illumination ray-trace; rover traverse planning enforces hard battery and orbital relay constraints in a jointly solved A* search over a real 5 m/px LOLA topography. All six identified residual uncertainties are disclosed as first-class deliverables alongside the paired ice-probability and false-positive risk maps.
+Detecting subsurface water ice within doubly shadowed craters (DSCs) at the lunar south pole is one of the most consequential open problems in planetary exploration. Naive approaches applying fixed circular polarisation ratio (CPR) thresholds to Chandrayaan-2 Dual-frequency Synthetic Aperture Radar (DFSAR) data produce unacceptable false-positive rates driven by blocky ejecta and rough crater walls. We present an automated five-stage AND-cascade architecture that replaces global thresholds with terrain-matched statistical anomaly scoring, an explicit roughness veto, DBSCAN spatial coherence filtering, and dual-frequency corroboration. On synthetic polar scenes the cascade achieves precision 0.96 / recall 0.45 ($F_1 = 0.570$); on real DFSAR proxy scenes the pipeline identifies 401 ice-candidate pixels in Shackleton Crater. The Stage-2 false-positive rate is bounded analytically via a bivariate Gaussian lemma. Penetration depth is calculated by applying radar skin-depth theory at published lunar loss tangents, yielding a conservative 2 m high-confidence sensing column. Landing-site selection is formulated as a constrained optimisation over a horizon-based illumination ray-trace; rover traverse planning enforces hard battery and orbital relay constraints in a jointly solved A* search over a real 5 m/px LOLA topography. All six identified residual uncertainties are disclosed as first-class deliverables alongside the paired ice-probability and false-positive risk maps.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -114,7 +114,7 @@ residual risk.
 
 \begin{itemize}
   \item \textbf{Stackable-veto cascade architecture}: terrain-matched statistical scoring replaces global thresholds. Instead of merely identifying radar anomalies, this architecture explicitly filters out roughness-induced false positives that have confounded prior L-band analyses (\S\ref{sec:method:icedetect}).
-  \item \textbf{Physically-derived penetration depth}: skin-depth theory
+  \item \textbf{Physically-applied penetration depth}: skin-depth theory
     yields a 4.3\,m maximum theoretical L-band penetration depth; a conservative 2\,m high-confidence sensing column is
     adopted with explicit uncertainty on deeper layers
     (\S\ref{sec:method:depth}).
@@ -579,7 +579,7 @@ Under the proposed design, the U-Net will not replace the cascade, but rather re
 \end{equation}
 The geometric mean is preferred because it acts as a soft logical AND gate; if either the physics-based cascade or the U-Net returns a low probability, the final fused score is driven to zero, preventing the learned model from hallucinating ice in physically inadmissible regions.
 
-\subsection{Physically-Derived Penetration Depth}
+\subsection{Physically-Applied Penetration Depth}
 \label{sec:method:depth}
 
 The radar skin depth for a homogeneous dielectric half-space is:
@@ -1299,7 +1299,7 @@ pipeline for detecting subsurface water ice in lunar doubly shadowed
 craters using Chandrayaan-2 DFSAR data and planning rover traverses
 into those craters.
 The five-stage AND-cascade anomaly detector reduces false-positive rates
-from na{\"i}ve threshold approaches; penetration depth is derived rather
+from na{\"i}ve threshold approaches; penetration depth is calculated via applied theory rather
 than assumed; landing site selection is formulated as a constrained
 optimisation over a full illumination ray-trace; traverse planning is
 solved jointly under hard energy and relay window constraints; and all
