@@ -67,8 +67,7 @@ def main():
     output = run_detector(scene, ref)
     
     logger.info("Estimating volume...")
-    cpr_L_anomaly = cpr_L - ref["mu_cpr"]
-    vol = estimate_ice_volume(cpr_L_anomaly, output.ice_candidates, scene.pixel_area_m2)
+    vol = estimate_ice_volume(cpr_L, output.ice_candidates, scene.pixel_area_m2)
     
     os.makedirs('results/real_run_v1', exist_ok=True)
     

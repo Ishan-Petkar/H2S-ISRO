@@ -23,7 +23,11 @@ def load_real_lola_dem(shape=(200, 200), pixel_size_m=5.0):
     slp_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'Site04_slp.tif')
     
     if not os.path.exists(surf_path) or not os.path.exists(slp_path):
-        raise FileNotFoundError(f"Missing LOLA files at {surf_path} or {slp_path}.")
+        logger.warning(f"Missing full LOLA files. Falling back to crops.")
+        surf_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'Site04_surf_crop.tif')
+        slp_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'Site04_slp_crop.tif')
+        if not os.path.exists(surf_path) or not os.path.exists(slp_path):
+            raise FileNotFoundError(f"Missing LOLA files at {surf_path} or {slp_path}.")
         
     surf = tifffile.imread(surf_path)
     slp = tifffile.imread(slp_path)

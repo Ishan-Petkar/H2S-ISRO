@@ -26,7 +26,7 @@ def compute_tail_probability(r, threshold=2.0):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--r", type=float, default=-0.995, help="Correlation coefficient")
+    parser.add_argument("--r", type=float, default=0.225, help="Correlation coefficient")
     parser.add_argument("--threshold", type=float, default=2.0, help="Standardized threshold")
     args = parser.parse_args()
 

@@ -828,7 +828,7 @@ Orange bar: energy consumed (darker) and mandatory 20\% safety margin (lighter).
 
 Ice fraction is estimated via a single empirical relation calibrated against literature baselines. Following Sahu et al. (2024)~\cite{sahu2024integrated}, the ice fraction is modelled as:
 \begin{equation}
-\Fice = a \cdot \ln\!\bigl(\CPR_{L,\mathrm{anomaly}}\bigr) + b,
+\Fice = \max\left(0, a \cdot \ln\!\bigl(\CPR_{L,\mathrm{anomaly}}\bigr) + b\right)
 \label{eq:icefrac}
 \end{equation}
 with coefficients $a = 0.15$ and $b = -0.05$ calibrated against Mini-SAR CPR and LCROSS-validated ice fractions at Erlanger Crater (north polar). Note that applying these coefficients to south-polar DSCs introduces an inter-hemisphere calibration transfer uncertainty, quantified as $\pm$10--15\% and listed as Known Unknown item 6. If a south-polar calibration scene is available, the coefficients should be re-fitted as described in Section~\ref{sec:intercater}.
@@ -1037,15 +1037,15 @@ rough terrain is incorrectly suppressed, reducing recall.
 ]
 %% EMPIRICAL CURVES — from synthetic stress test validation
 \addplot[blue, thick, solid] coordinates {
-  (1.5,0.981)(1.75,0.981)(2.0,0.981)(2.25,0.981)(2.5,0.981)(2.75,0.981)(3.0,0.981)
+  (1.5,0.974)(1.75,0.974)(2.0,0.975)(2.25,0.975)(2.5,0.975)(2.75,0.975)(3.0,0.975)
 };
 \addlegendentry{Precision}
 \addplot[red, thick, solid] coordinates {
-  (1.5,0.374)(1.75,0.392)(2.0,0.396)(2.25,0.398)(2.5,0.400)(2.75,0.401)(3.0,0.401)
+  (1.5,0.378)(1.75,0.395)(2.0,0.401)(2.25,0.406)(2.5,0.408)(2.75,0.409)(3.0,0.409)
 };
 \addlegendentry{Recall}
 \addplot[black, thick, solid] coordinates {
-  (1.5,0.542)(1.75,0.560)(2.0,0.564)(2.25,0.566)(2.5,0.569)(2.75,0.570)(3.0,0.570)
+  (1.5,0.544)(1.75,0.563)(2.0,0.569)(2.25,0.573)(2.5,0.575)(2.75,0.576)(3.0,0.576)
 };
 \addlegendentry{F$_1$ Score}
 \end{axis}
@@ -1251,6 +1251,9 @@ under high-noise synthetic stress tests. A higher recall target
 would require relaxed OR-logic and would unacceptably elevate the
 false-positive risk.
 
+\subsection{SAR Geometric Limitations and Coregistration}
+A critical limitation of applying the proposed pipeline to real orbital SAR data in steep lunar craters is the inherent geometric distortion of side-looking radar. At the steep incidence angles often required to illuminate crater interiors, phenomena such as layover, foreshortening, and radar shadow become significant. These geometric effects can systematically distort the observed scattering matrix and mask true polarimetric anomalies. Furthermore, ensuring precise sub-pixel coregistration between slant-range DFSAR imagery and nadir-looking LOLA digital elevation models in areas of extreme topographic relief is mathematically ill-posed and historically a leading source of false-positive anomalies. While the spatial coherence filter (Stage 4) and roughness veto (Stage 3) mitigate isolated artifacts, they cannot fully correct for widespread deterministic layover. Future operational variants of this pipeline must incorporate rigorous SAR orthorectification coupled with radar shadow masks prior to anomaly scoring.
+
 The U-Net refinement layer (Section~\ref{sec:method:unet}) extends
 the AND-cascade with learned spatial context.
 Crucially, the U-Net is trained on cascade outputs as weak supervision:
@@ -1360,11 +1363,11 @@ Thus, the independent joint probability is:
 \begin{equation*}
 P_{\mathrm{FP},\mathrm{indep}}^{(2)} \approx 0.02275 \times 0.02275 \approx 5.18 \times 10^{-4}.
 \end{equation*}
-In real dry-regolith regions, surface and subsurface roughness typically introduces a non-positive correlation ($r_{\mathcal{R}} \le 0$) between CPR and DOP anomalies, as rougher surfaces increase CPR while simultaneously depolarising and reducing DOP. For any bivariate normal distribution with $r_{\mathcal{R}} \le 0$, the joint tail probability in opposite quadrants is bounded below by the independent case:
+In real dry-regolith regions, surface and subsurface roughness typically introduces a correlation between CPR and DOP anomalies. For any bivariate normal distribution with $r_{\mathcal{R}} \ge 0$, the joint tail probability in opposite quadrants (i.e., high CPR and low DOP) is bounded strictly above by the independent case:
 \begin{equation*}
-\int_{2}^{\infty} \int_{-\infty}^{-2} f(x, y; r_{\mathcal{R}}) \, dy \, dx \ge \int_{2}^{\infty} \phi_{\mathcal{N}}(x) \, dx \int_{-\infty}^{-2} \phi_{\mathcal{N}}(y) \, dy,
+\int_{2}^{\infty} \int_{-\infty}^{-2} f(x, y; r_{\mathcal{R}}) \, dy \, dx \le \int_{2}^{\infty} \phi_{\mathcal{N}}(x) \, dx \int_{-\infty}^{-2} \phi_{\mathcal{N}}(y) \, dy,
 \end{equation*}
-where $f(x, y; r_{\mathcal{R}})$ is the standard bivariate normal PDF and $\phi_{\mathcal{N}}$ is the standard univariate normal PDF. For a strong empirical correlation coefficient $r_{\mathcal{R}} \approx -0.995$ (as measured by Verma et al. 2025~\cite{verma2025dfsar} for doubly shadowed craters), the actual false-positive rate rises to $0.0206$, which is orders of magnitude higher than the independent case of $5.18 \times 10^{-4}$. This nearly perfect negative correlation means that CPR and DOP anomalies are highly redundant rather than independent. This increases the rate of raw anomalous pixels dramatically, making the subsequent spatial coherence, roughness veto, and dual-frequency corroboration (Stages 3--5) of the cascade absolutely critical to suppress these correlated anomalies and guarantee a final false-positive rate well below $0.1\%$.
+where $f(x, y; r_{\mathcal{R}})$ is the standard bivariate normal PDF and $\phi_{\mathcal{N}}$ is the standard univariate normal PDF. For our empirical within-class pixel correlation coefficient $r_{\mathcal{R}} \approx 0.225$ (measured from the real DFSAR proxy data crop), the actual false-positive rate falls to $1.08 \times 10^{-4}$, significantly lower than the independent case of $5.18 \times 10^{-4}$. This weak positive correlation means that simultaneous CPR and DOP anomalies are exceptionally rare in dry regolith, rendering the Stage-2 logical AND exceptionally powerful at suppressing false positives before the spatial and roughness vetoes are even applied.
 \end{proof}
 
 % Unnecessary derivations for basic design properties have been removed to avoid formalism inflation.

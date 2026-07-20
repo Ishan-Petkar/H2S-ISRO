@@ -315,7 +315,7 @@ def astar_traverse(cost_map: np.ndarray,
 # Ice Volume Estimation
 # ─────────────────────────────────────────────
 
-def estimate_ice_volume(cpr_L_anomaly: np.ndarray,
+def estimate_ice_volume(cpr_L_abs: np.ndarray,
                          candidate_mask: np.ndarray,
                          pixel_area_m2: float,
                          depth_m: float = 2.0,
@@ -326,7 +326,7 @@ def estimate_ice_volume(cpr_L_anomaly: np.ndarray,
     Empirical CPR-to-ice-fraction mapping with MC uncertainty propagation.
     Coefficients a, b from Sahu et al. 2025 (Cabeus/Shackleton calibration).
     """
-    cpr_vals = cpr_L_anomaly[candidate_mask]
+    cpr_vals = cpr_L_abs[candidate_mask]
     f_ice = a * np.log(np.clip(cpr_vals, 0.01, None)) + b
     f_ice = np.clip(f_ice, 0, 1)
 
