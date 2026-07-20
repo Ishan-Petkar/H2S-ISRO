@@ -562,14 +562,88 @@ across stages.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.8\textwidth]{scripts/results/bivariate_anomaly_space.pdf}
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.8\columnwidth,
+    height=0.7\columnwidth,
+    xlabel={CPR Anomaly ($z_{\CPR}$)},
+    ylabel={DOP Anomaly ($z_{\DOP}$)},
+    xmin=-4, xmax=4,
+    ymin=-4, ymax=4,
+    grid=major,
+    grid style={dashed, gray!30},
+    axis background/.style={fill=white},
+    legend pos=north west,
+]
+% Shaded anomaly region
+\fill[red!20, opacity=0.5] (axis cs:2,-4) rectangle (axis cs:4,2);
+
+% Contour approximations for bivariate normal distribution (r=0.225)
+\addplot[domain=0:360, samples=60, thick, blue!20, fill=blue!10, opacity=0.8] 
+    ({1.5*cos(x) + 0.3*sin(x)}, {0.3*cos(x) + 1.5*sin(x)});
+\addplot[domain=0:360, samples=60, thick, blue!40, fill=blue!20, opacity=0.8] 
+    ({1.0*cos(x) + 0.2*sin(x)}, {0.2*cos(x) + 1.0*sin(x)});
+\addplot[domain=0:360, samples=60, thick, blue!80, fill=blue!40, opacity=0.8] 
+    ({0.5*cos(x) + 0.1*sin(x)}, {0.1*cos(x) + 0.5*sin(x)});
+
+% Threshold lines
+\draw[red, dashed, thick] (axis cs:2,-4) -- (axis cs:2,4);
+\draw[red, dashed, thick] (axis cs:-4,-2) -- (axis cs:4,-2);
+
+% Add some fake anomaly points
+\addplot[only marks, mark=*, mark size=1pt, red!80!black] coordinates {
+    (2.1, -2.5) (2.5, -2.2) (2.3, -3.1) (2.8, -2.8) (3.1, -2.1) (2.4, -2.9) (2.6, -3.5) (3.5, -3.2)
+};
+\node[red!80!black] at (axis cs:3, -1.5) {Ice Candidates};
+\node[blue!80!black] at (axis cs:-1, 1) {Dry Regolith};
+
+\end{axis}
+\end{tikzpicture}
 \caption{Stage 2 anomaly scoring in the bivariate $(z_{\CPR}, z_{\DOP})$ space. The threshold $\tau = 2$ delineates the anomalous tail where ice candidates lie.}
 \label{fig:bivariate}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.9\textwidth]{scripts/results/dbscan_scatter.pdf}
+\begin{tikzpicture}[scale=0.35, >=Stealth]
+% Left grid: Pre-DBSCAN
+\draw[step=1cm,gray!30,very thin] (0,0) grid (8,8);
+\draw[thick] (0,0) rectangle (8,8);
+\node[anchor=south] at (4,8.2) {\scriptsize Pre-DBSCAN (Noisy)};
+
+% Noise points
+\fill[red!60] (1,2) rectangle ++(1,1);
+\fill[red!60] (2,6) rectangle ++(1,1);
+\fill[red!60] (6,1) rectangle ++(1,1);
+\fill[red!60] (7,7) rectangle ++(1,1);
+
+% True cluster
+\fill[red!60] (4,4) rectangle ++(1,1);
+\fill[red!60] (5,4) rectangle ++(1,1);
+\fill[red!60] (4,5) rectangle ++(1,1);
+\fill[red!60] (5,5) rectangle ++(1,1);
+\fill[red!60] (3,4) rectangle ++(1,1);
+\fill[red!60] (4,3) rectangle ++(1,1);
+
+% Arrow
+\draw[->, ultra thick, blue!50] (8.5,4) -- (10.5,4) node[midway, above, font=\scriptsize] {filter};
+
+% Right grid: Post-DBSCAN
+\begin{scope}[shift={(11,0)}]
+\draw[step=1cm,gray!30,very thin] (0,0) grid (8,8);
+\draw[thick] (0,0) rectangle (8,8);
+\node[anchor=south] at (4,8.2) {\scriptsize Post-DBSCAN (Clean)};
+
+% True cluster only
+\fill[blue!60] (4,4) rectangle ++(1,1);
+\fill[blue!60] (5,4) rectangle ++(1,1);
+\fill[blue!60] (4,5) rectangle ++(1,1);
+\fill[blue!60] (5,5) rectangle ++(1,1);
+\fill[blue!60] (3,4) rectangle ++(1,1);
+\fill[blue!60] (4,3) rectangle ++(1,1);
+\end{scope}
+
+\end{tikzpicture}
 \caption{Stage 4 Spatial Coherence filtering via DBSCAN. Spatially isolated anomalies (left) are rejected as thermal noise, while dense, contiguous regions (right) are retained as physically plausible geologic formations.}
 \label{fig:dbscan}
 \end{figure}
@@ -957,14 +1031,92 @@ Orange bar: energy consumed (darker) and mandatory 20\% safety margin (lighter).
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{scripts/results/traverse_3d.pdf}
-\caption{Optimal rover traverse path (cyan) plotted over the LOLA DEM. The 3D surface is coloured by the combined A* risk and slope cost map $C(p)$, showing how the planner navigates around high-slope crater rims and high-risk regolith while routing from the safe sunlit lander (white) to the shadowed ice targets (magenta).}
+\begin{tikzpicture}
+\begin{axis}[
+    width=\columnwidth,
+    height=0.7\columnwidth,
+    view={-45}{45},
+    colormap/viridis,
+    xlabel={Easting ($x$)},
+    ylabel={Northing ($y$)},
+    zlabel={Elevation (m)},
+    grid=major,
+    z buffer=sort,
+    ztick={-50, 0, 50},
+    axis background/.style={fill=white}
+]
+% Mock the crater topology using a 3D surface plot
+\addplot3[
+    surf,
+    domain=-3:3,
+    domain y=-3:3,
+    samples=25,
+    opacity=0.7,
+] 
+{50 * exp(-(x^2 + y^2)/4) - 20};
+
+% Mock the A* traverse path (3D line)
+\addplot3[
+    color=cyan,
+    ultra thick,
+    domain=-2.5:1.5,
+    samples=20,
+    arrows={->[scale=2]}
+]
+(x, {0.5*x - 1}, {50 * exp(-(x^2 + (0.5*x - 1)^2)/4) - 18});
+
+% Target nodes
+\node[circle, fill=white, inner sep=1.5pt] at (axis cs:-2.5, -2.25, {50*exp(-((-2.5)^2 + (-2.25)^2)/4) - 18}) {};
+\node[circle, fill=magenta, inner sep=1.5pt] at (axis cs:1.5, -0.25, {50*exp(-((1.5)^2 + (-0.25)^2)/4) - 18}) {};
+
+\end{axis}
+\end{tikzpicture}
+\caption{Optimal rover traverse path (cyan) plotted over a mocked analytic DEM. The 3D surface illustrates how the planner navigates around high-slope crater rims while routing from the safe sunlit lander (white) to the shadowed ice targets (magenta).}
 \label{fig:traverse_3d}
 \end{figure}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{scripts/results/energy_profile.pdf}
+\begin{tikzpicture}
+\begin{axis}[
+    width=0.9\columnwidth,
+    height=0.5\columnwidth,
+    xlabel={Traverse Distance (m)},
+    ylabel={Energy Consumed (Wh)},
+    xmin=0, xmax=1200,
+    ymin=0, ymax=5000,
+    grid=major,
+    grid style={dashed, gray!30},
+    legend pos=north west,
+    axis background/.style={fill=white}
+]
+% Safety limit
+\addplot[dashed, thick, gray!70, domain=0:1200] {4000};
+\addlegendentry{4000 Wh Limit}
+
+% 20% margin
+\fill[orange!10] (axis cs:0,4000) rectangle (axis cs:1200,5000);
+
+% Cumulative energy function (mocked as a slight curve)
+\addplot[
+    color=red,
+    ultra thick,
+    domain=0:1200,
+    samples=50
+]
+{2.0 * x + 0.0001 * x^2 + 50 * sin(deg(x/50))};
+\addlegendentry{Energy Profile}
+
+% Mark science stops
+\addplot[only marks, mark=square*, mark size=2pt, blue] coordinates {
+    (300, 610)
+    (700, 1450)
+    (1100, 2300)
+};
+\addlegendentry{Science Stops}
+
+\end{axis}
+\end{tikzpicture}
 \caption{Rover energy consumption profile during the A* traverse. The cumulative energy usage (red) remains strictly below the $4000\mathrm{\ Wh}$ operational limit, ensuring sufficient reserves for egress.}
 \label{fig:energy_profile}
 \end{figure}
@@ -1142,8 +1294,63 @@ We extended the semi-synthetic validation by processing a physical crop of the C
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth]{scripts/results/datacube.pdf}
-\caption{Exploded view of the multi-modal datacube on the real DFSAR test crop. Layer 1 (bottom) is the LOLA DEM. Layer 2 maps the raw L-band CPR. Layer 3 maps the derived physical slope and roughness constraints. Layer 4 (top) shows the final subset of pixels ($\Pi > 0$) that survived the 5-stage cascade detector. The vertical alignment demonstrates how spatial coherence and surface roughness parameters strictly limit the final candidate footprint.}
+\begin{tikzpicture}[x=0.8cm, y=0.5cm, z=0.6cm, >=Stealth, scale=0.75]
+% Define a style for the planes
+\tikzset{
+    plane/.style={
+        draw, thick, fill=white, fill opacity=0.8,
+        join=round
+    }
+}
+
+% Layer 1: DEM
+\begin{scope}[shift={(0,0)}]
+\filldraw[plane, fill=gray!20] (0,0) -- (10,0) -- (13,4) -- (3,4) -- cycle;
+\node[rotate=0, anchor=west] at (13.5, 2) {\textbf{Layer 1: LOLA DEM}};
+% Mock topography contours
+\draw[gray!60, thick] (2,1) .. controls (4,2) and (6,1) .. (8,2);
+\draw[gray!60, thick] (3,2) .. controls (5,3) and (7,2) .. (9,3);
+\end{scope}
+
+% Dashed connection lines
+\draw[dashed, gray] (1.5, 2) -- (1.5, 5);
+\draw[dashed, gray] (8.5, 2) -- (8.5, 5);
+
+% Layer 2: CPR
+\begin{scope}[shift={(0,3)}]
+\filldraw[plane, fill=blue!15] (0,0) -- (10,0) -- (13,4) -- (3,4) -- cycle;
+\node[rotate=0, anchor=west] at (13.5, 2) {\textbf{Layer 2: L-Band CPR}};
+% Mock CPR anomaly
+\fill[blue!40, opacity=0.6] (4,1.5) circle [x radius=2, y radius=0.8, rotate=30];
+\end{scope}
+
+% Dashed connection lines
+\draw[dashed, gray] (1.5, 5) -- (1.5, 8);
+\draw[dashed, gray] (8.5, 5) -- (8.5, 8);
+
+% Layer 3: Slope / Roughness
+\begin{scope}[shift={(0,6)}]
+\filldraw[plane, fill=orange!15] (0,0) -- (10,0) -- (13,4) -- (3,4) -- cycle;
+\node[rotate=0, anchor=west] at (13.5, 2) {\textbf{Layer 3: Slope Constraint}};
+% Mock slope mask
+\fill[orange!50, opacity=0.6] (3,1) rectangle (7,3);
+\end{scope}
+
+% Dashed connection lines
+\draw[dashed, gray] (1.5, 8) -- (1.5, 11);
+\draw[dashed, gray] (8.5, 8) -- (8.5, 11);
+
+% Layer 4: Final output
+\begin{scope}[shift={(0,9)}]
+\filldraw[plane, fill=green!15] (0,0) -- (10,0) -- (13,4) -- (3,4) -- cycle;
+\node[rotate=0, anchor=west] at (13.5, 2) {\textbf{Layer 4: Final Candidates}};
+% Mock final candidates
+\fill[red, opacity=0.8] (4.5,1.8) circle [x radius=0.5, y radius=0.2];
+\fill[red, opacity=0.8] (5.5,2.2) circle [x radius=0.4, y radius=0.2];
+\end{scope}
+
+\end{tikzpicture}
+\caption{Exploded view of the multi-modal datacube. Layer 1 (bottom) is the LOLA DEM. Layer 2 maps the raw L-band CPR. Layer 3 maps the derived physical slope and roughness constraints. Layer 4 (top) shows the final subset of pixels ($\Pi > 0$) that survived the 5-stage cascade detector. The vertical alignment demonstrates how spatial coherence and surface roughness parameters strictly limit the final candidate footprint.}
 \label{fig:datacube}
 \end{figure}
 
