@@ -22,7 +22,7 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, decorations.pathmorphing}
 
 %% ---------- Theorem environments ----------
 \newtheorem{theorem}{Theorem}
@@ -253,6 +253,69 @@ $\Phi(p)$ & False-positive risk score at pixel $p$ \\
 \end{tabular}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    scale=0.9, every node/.style={transform shape},
+    font=\sffamily\small,
+    radar/.style={thick, ->, decorate, decoration={snake, amplitude=1mm, segment length=3mm, post length=1mm}}
+]
+
+% Left side: Volume Scattering (Ice)
+\begin{scope}[xshift=-4cm]
+    \node at (1.5, 3.5) {\textbf{(a) Volume Scattering (Ice)}};
+    % Regolith surface
+    \draw[fill=gray!20, draw=none] (-1,0) rectangle (4,-2);
+    \draw[thick] (-1,0) -- (4,0);
+    
+    % Ice chunks inside
+    \draw[fill=cyan!30] (0.5, -0.5) circle (0.3);
+    \draw[fill=cyan!30] (1.5, -1.2) circle (0.4);
+    \draw[fill=cyan!30] (2.5, -0.8) circle (0.35);
+    \draw[fill=cyan!30] (1.0, -1.5) circle (0.2);
+    \draw[fill=cyan!30] (3.0, -1.6) circle (0.25);
+    
+    % Incoming radar
+    \draw[radar, blue] (-0.5, 2.5) -- (0.5, -0.2);
+    \node[blue] at (-0.5, 2.8) {Tx (L-band)};
+    
+    % Multiple internal bounces
+    \draw[thick, ->, cyan] (0.5, -0.2) -- (1.4, -0.9);
+    \draw[thick, ->, cyan] (1.4, -0.9) -- (2.3, -0.6);
+    
+    % Backscatter
+    \draw[radar, red] (2.3, -0.6) -- (3.5, 2.5);
+    \node[red, align=center] at (3.5, 2.8) {Rx (Depolarised)\\High CPR};
+\end{scope}
+
+% Right side: Corner Reflection (Rock)
+\begin{scope}[xshift=3.5cm]
+    \node at (1.5, 3.5) {\textbf{(b) Corner Reflection (Rocks)}};
+    % Regolith surface
+    \draw[fill=gray!20, draw=none] (-1,0) rectangle (4,-2);
+    \draw[thick] (-1,0) -- (1,0) -- (1.5, 0.5) -- (2.5, 0.5) -- (3,0) -- (4,0); % Rocky surface
+    
+    % Incoming radar
+    \draw[radar, blue] (0, 2.5) -- (1.2, 0.2);
+    
+    % Double bounce on rock surface
+    \draw[thick, ->, orange] (1.2, 0.2) -- (2.0, 0.5);
+    
+    % Backscatter
+    \draw[radar, red] (2.0, 0.5) -- (3.0, 2.5);
+    \node[red, align=center] at (3.0, 2.8) {Rx (Even Bounce)\\High CPR};
+    
+    % Labels
+    \node at (2, 0.8) {Blocky Ejecta};
+\end{scope}
+
+% Separator line
+\draw[dashed, thick, gray] (3, -2) -- (3, 4);
+
+\end{tikzpicture}
+\caption{Physical basis of radar ambiguity in lunar polar craters. (a) Water ice deposits within the regolith volume produce multiple internal scattering events, causing the backscatter to depolarise and yield a high Circular Polarisation Ratio (CPR $\ge 1.0$). (b) Blocky surface ejecta from young craters can mimic this signature through double-bounce (dihedral) reflections on the rough surface. Stage 3 of our cascade (Roughness Veto) uses LOLA DEM topography to reject the latter.}
+\label{fig:physics_ambiguity}
+\end{figure}
 
 \subsection{Formal Problem Definition}
 
@@ -284,6 +347,65 @@ orbital relay ephemeris, produce:
 %% ==========================================================
 \section{Proposed Method}
 \label{sec:method}
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm and 2cm,
+    font=\sffamily\small,
+    box/.style={draw, rounded corners, fill=blue!10, text width=2.5cm, align=center, minimum height=1.2cm},
+    input/.style={draw, trapezium, trapezium left angle=70, trapezium right angle=-70, fill=green!10, align=center, minimum height=1cm},
+    arrow/.style={-stealth, thick},
+    groupbox/.style={draw, dashed, inner sep=10pt, rounded corners}
+]
+
+% Inputs
+\node[input] (dfsar) {DFSAR (L/S)\\ CPR \& DOP};
+\node[input, right=1cm of dfsar] (lola) {LOLA DEM\\ \& Slope};
+\node[input, right=1cm of lola] (ephem) {Orbital\\ Ephemeris};
+
+% Detector Stages
+\node[box, below=1.5cm of lola, fill=orange!15] (stage1) {Stage 1: Sunlit\\ Reference Extraction};
+\node[box, below=0.8cm of stage1, fill=orange!15] (stage2) {Stage 2: Anomaly\\ Scoring ($z_{CPR}, z_{DOP}$)};
+\node[box, below=0.8cm of stage2, fill=orange!15] (stage3) {Stage 3: Roughness\\ Veto ($\le 2\sigma$)};
+\node[box, below=0.8cm of stage3, fill=orange!15] (stage4) {Stage 4: Spatial\\ Coherence (DBSCAN)};
+\node[box, below=0.8cm of stage4, fill=orange!15] (stage5) {Stage 5: Dual-Freq\\ Corroboration};
+
+% Bounding box for detector
+\node[groupbox, fit=(stage1) (stage5), label={[shift={(0,-4.5)}]\textbf{5-Stage AND-Cascade}}] (cascade) {};
+
+% Maps Output
+\node[box, fill=cyan!15, left=1cm of stage5] (pi_map) {Ice Probability\\ Map ($\Pi$)};
+\node[box, fill=red!15, right=1cm of stage5] (phi_map) {False Positive\\ Risk Map ($\Phi$)};
+
+% Planner
+\node[box, fill=purple!15, below=1.5cm of stage5, text width=4cm] (planner) {A* Traverse Planner\\ $C(p) = f(\Pi, \Phi, \text{Slope})$};
+\node[box, fill=yellow!20, below=1cm of planner, text width=3cm] (output) {Optimal Rover\\ Traverse Path};
+
+% Routing Arrows
+\draw[arrow] (dfsar.south) -- ++(0,-0.5) -| (stage1.north);
+\draw[arrow] (lola.south) -- (stage1.north);
+\draw[arrow] (ephem.south) -- ++(0,-0.5) -| (stage1.north);
+
+\draw[arrow] (stage1) -- (stage2);
+\draw[arrow] (stage2) -- (stage3);
+\draw[arrow] (stage3) -- (stage4);
+\draw[arrow] (stage4) -- (stage5);
+
+\draw[arrow] (stage5.west) -- (pi_map.east);
+\draw[arrow] (stage5.east) -- (phi_map.west);
+
+\draw[arrow] (pi_map.south) |- (planner.west);
+\draw[arrow] (phi_map.south) |- (planner.east);
+\draw[arrow] (lola.east) -- ++(4.5,0) |- (planner.east);
+\draw[arrow] (ephem.east) -- ++(2.5,0) |- (planner.east);
+
+\draw[arrow] (planner) -- (output);
+
+\end{tikzpicture}
+\caption{End-to-End System Architecture. The multi-modal orbital data (DFSAR, LOLA, Ephemeris) feeds into the 5-stage AND-cascade detector. The cascade outputs high-level Ice Probability ($\Pi$) and False Positive Risk ($\Phi$) maps, which are jointly optimized with slope and orbital relay constraints in the A* Traverse Planner to output physically feasible rover sorties.}
+\label{fig:architecture}
+\end{figure*}
 
 Figure~\ref{fig:pipeline} summarises the complete pipeline.
 
@@ -437,6 +559,20 @@ across stages.
 \RETURN $(\Pi, \Phi)$, ice-candidate set $\mathcal{I}$.
 \end{algorithmic}
 \end{algorithm}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{scripts/results/bivariate_anomaly_space.pdf}
+\caption{Stage 2 anomaly scoring in the bivariate $(z_{\CPR}, z_{\DOP})$ space. The threshold $\tau = 2$ delineates the anomalous tail where ice candidates lie.}
+\label{fig:bivariate}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\textwidth]{scripts/results/dbscan_scatter.pdf}
+\caption{Stage 4 Spatial Coherence filtering via DBSCAN. Spatially isolated anomalies (left) are rejected as thermal noise, while dense, contiguous regions (right) are retained as physically plausible geologic formations.}
+\label{fig:dbscan}
+\end{figure}
 
 \textit{Complexity.}
 Let $N = |\mathcal{P}|$.
@@ -819,6 +955,20 @@ Orange bar: energy consumed (darker) and mandatory 20\% safety margin (lighter).
 \label{fig:timeline}
 \end{figure}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{scripts/results/traverse_3d.pdf}
+\caption{Optimal rover traverse path (cyan) plotted over the LOLA DEM. The 3D surface is coloured by the combined A* risk and slope cost map $C(p)$, showing how the planner navigates around high-slope crater rims and high-risk regolith while routing from the safe sunlit lander (white) to the shadowed ice targets (magenta).}
+\label{fig:traverse_3d}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{scripts/results/energy_profile.pdf}
+\caption{Rover energy consumption profile during the A* traverse. The cumulative energy usage (red) remains strictly below the $4000\mathrm{\ Wh}$ operational limit, ensuring sufficient reserves for egress.}
+\label{fig:energy_profile}
+\end{figure}
+
 
 
 
@@ -990,6 +1140,12 @@ The detector successfully identified the large- and medium-scale ice patches, ac
 \textbf{Phase 3: Real Data Validation.}
 We extended the semi-synthetic validation by processing a physical crop of the Chandrayaan-2 DFSAR L2 dataset, serving as a proxy for the missing full-scene mosaics. On this physical data, using a computed sunlit background reference ($\mu_{\CPR}=0.4, \sigma_{\CPR}=0.1, \mu_{\DOP}=0.7, \sigma_{\DOP}=0.1$), the cascade detector identified 1540 high-confidence ice candidate pixels. Using the volume estimation methodology, this translates to an estimated ice volume of 9 m$^3$ (90\% CI [8, 13]).
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{scripts/results/datacube.pdf}
+\caption{Exploded view of the multi-modal datacube on the real DFSAR test crop. Layer 1 (bottom) is the LOLA DEM. Layer 2 maps the raw L-band CPR. Layer 3 maps the derived physical slope and roughness constraints. Layer 4 (top) shows the final subset of pixels ($\Pi > 0$) that survived the 5-stage cascade detector. The vertical alignment demonstrates how spatial coherence and surface roughness parameters strictly limit the final candidate footprint.}
+\label{fig:datacube}
+\end{figure}
 
 \textbf{Semi-Synthetic Validation on Spacecraft-Derived Geometries.}
 To test the pipeline's performance on realistic, complex geologic ice distributions, we extracted two $256 \times 256$ patches ($25$\,m/pixel spacing) centered on known active ice-bearing zones in the Sverdrup ($88.5^\circ$S, $152.0^\circ$W) and Faustini ($87.3^\circ$S, $77.0^\circ$E) crater regions from the official Putrevu et al. 2023 mask. We injected these real-geometry ice shapes into simulated polarimetric scenes matching the dry-regolith reference statistics ($\mu_{\CPR} = 0.35, \sigma_{\CPR} = 0.08$ and $\mu_{\DOP} = 0.75, \sigma_{\DOP} = 0.08$) and simulated 1-look speckle noise and Lee spatial filtering.
