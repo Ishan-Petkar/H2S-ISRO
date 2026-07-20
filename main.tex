@@ -63,28 +63,7 @@ Using Chandrayaan-2 DFSAR Data}
 
 %% ----------------------------------------------------------
 \begin{abstract}
-Detecting subsurface water ice within doubly shadowed craters (DSCs)
-at the lunar south pole is one of the most consequential open problems
-in planetary exploration. However, naive approaches applying fixed circular
-polarisation ratio (CPR) thresholds to Chandrayaan-2 Dual-frequency
-Synthetic Aperture Radar (DFSAR) data produce unacceptable false-positive
-rates driven by blocky ejecta and rough crater walls.
-To resolve this, we present an automated, stackable-veto cascade architecture
-that replaces global thresholds with terrain-matched statistical anomaly scoring
-and an explicit roughness veto. Crucially, this framework is entirely proof-backed
-and empirically validated: the roughness veto ($2.5\sigma$) is derived from a rigorous
-synthetic polarimetric stress test ($F_1=0.57$), while baseline false-positive probabilities
-are grounded in actual LRO Mini-RF reference statistics.
-Furthermore, penetration depth is derived physically from radar skin-depth theory
-rather than assumed.
-Rover traverse feasibility is no longer treated conceptually; it is solved jointly
-via an A* path planner applied directly to real $5$\,m/px LOLA topography at the
-Shackleton crater rim, strictly enforcing physical traction coefficients, energy budgets,
-and orbital relay communication windows derived from a representative polar orbit model.
-By demanding that each design decision is grounded in a stated physical constraint
-and every residual uncertainty is mathematically bounded, this pipeline delivers
-paired ice-probability and false-positive risk maps alongside ranked, energy-feasible
-rover corridor options ready for mission integration.
+Detecting subsurface water ice within doubly shadowed craters (DSCs) at the lunar south pole is one of the most consequential open problems in planetary exploration. Naive approaches applying fixed circular polarisation ratio (CPR) thresholds to Chandrayaan-2 Dual-frequency Synthetic Aperture Radar (DFSAR) data produce unacceptable false-positive rates driven by blocky ejecta and rough crater walls. We present an automated five-stage AND-cascade architecture that replaces global thresholds with terrain-matched statistical anomaly scoring, an explicit roughness veto, DBSCAN spatial coherence filtering, and dual-frequency corroboration. On synthetic polar scenes the cascade achieves precision 0.96 / recall 0.45 ($F_1 = 0.570$); on real DFSAR proxy scenes the pipeline identifies 401 ice-candidate pixels in Shackleton Crater. The Stage-2 false-positive rate is bounded analytically via a bivariate Gaussian lemma. Penetration depth is derived from radar skin-depth theory at published lunar loss tangents, yielding a conservative 2 m high-confidence sensing column. Landing-site selection is formulated as a constrained optimisation over a horizon-based illumination ray-trace; rover traverse planning enforces hard battery and orbital relay constraints in a jointly solved A* search over a real 5 m/px LOLA topography. All six identified residual uncertainties are disclosed as first-class deliverables alongside the paired ice-probability and false-positive risk maps.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -201,6 +180,8 @@ impose additional hard time constraints on in-shadow
 excursions~\cite{nann2020relay}.
 The present work fills this gap by formalising both constraints as
 hard requirements in a jointly solved A* planner.
+
+More recently, Candela and Ono (2024)~\cite{candela2024chance} introduced chance-constrained path planning for VIPER-class missions that handles stochastic delays (e.g., sample collection overruns) by computing a policy distribution over trajectories rather than a single optimal path. This approach provides stronger robustness guarantees than the deterministic A* formulation used here; extending the present planner to chance-constrained formulation represents a natural future direction (Section~\ref{sec:discussion}).
 
 \begin{table}[htbp]
 \caption{Comparison with Prior DFSAR/SAR Ice Detection Approaches}
@@ -612,6 +593,7 @@ from~\cite{campbell2006}):
         \approx 4.3\,\text{m}.
 \label{eq:deltanum}
 \end{equation}
+These parameters follow Campbell (2006) measured at room temperature ($\approx 300$\,K). At the cryogenic temperatures of lunar PSRs (40--120\,K), the dielectric loss tangent of anhydrous silicates decreases, and the real permittivity slightly increases, with measured values for lunar analogues suggesting $\tan\delta_\ell$ may be as low as 0.002 at 77\,K (Olhoeft \& Strangway, 1975). This would increase the theoretical skin depth to $\approx 10$\,m, further supporting the conservatism of the 2\,m high-confidence column.
 
 Because interstitial ice elevates the real permittivity
 ($\varepsilon' \to 4$--$6$ for ice-rich mixtures) and increases
@@ -853,13 +835,12 @@ Orange bar: energy consumed (darker) and mandatory 20\% safety margin (lighter).
 \subsection{Ice Volume Estimation}
 \label{sec:method:volume}
 
-Ice fraction is estimated via a single empirical relation calibrated
-against Mini-RF-validated ice-bearing regions:
+Ice fraction is estimated via a single empirical relation calibrated against literature baselines. Following Sahu et al. (2024)~\cite{sahu2024integrated}, the ice fraction is modelled as:
 \begin{equation}
 \Fice = a \cdot \ln\!\bigl(\CPR_{L,\mathrm{anomaly}}\bigr) + b,
 \label{eq:icefrac}
 \end{equation}
-with coefficients $a = 0.15$ and $b = -0.05$ representing the empirical calibration parameters calibrated against south polar reference craters~\cite{sahu2024integrated}.
+with coefficients $a = 0.15$ and $b = -0.05$ calibrated against Mini-SAR CPR and LCROSS-validated ice fractions at Erlanger Crater (north polar). Note that applying these coefficients to south-polar DSCs introduces an inter-hemisphere calibration transfer uncertainty, quantified as $\pm$10--15\% and listed as Known Unknown item 6. If a south-polar calibration scene is available, the coefficients should be re-fitted as described in Section~\ref{sec:intercater}.
 The headline ice volume integrates over the 2\,m high-confidence column:
 \begin{equation}
 \Vice = \sum_{p \in \mathcal{I}} A_p \cdot \Fice(p) \cdot 2\,\text{m},
